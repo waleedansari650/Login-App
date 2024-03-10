@@ -2,11 +2,11 @@
 
 # dependencies
 node_modules
-server/node_modules
+../../server/node_modules
 client/.env
 server/.env
 package-lock.json
-server/package-lock.json
+../../server/package-lock.json
 /.pnp
 .pnp.js
 # testing
