@@ -1,41 +1,60 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import avatar from "../assets/profile.png";
 import styles from "../styles/Username.module.css";
 import extend from "../styles/profile.module.css";
-import { Toaster } from "react-hot-toast";
+import useFetch from '../hook/fetch.hook';
+import toast,{ Toaster } from "react-hot-toast";
 import { useFormik } from "formik";
+import { useAuthStore } from "../store/store";
 import { profileValidation } from "../helper/validate";
 import convertToBase64 from "../helper/convert";
+import { updateUser } from "../helper/helper";
 const Profile = () => {
   const [file, setFile] = useState();
+  const navigate = useNavigate();
+  const [{isLoading, apiData, serverError}] = useFetch();
   const formik = useFormik({
     initialValues: {
-      firstName : '',
-      lastName : '',
-      email: "admin@gmail.com",
-      mobile: "example123",
-      address: "example123",
+      firstName : apiData?.firstName ||'',
+      lastName : apiData?.lastName || '',
+      email: apiData?.email || "",
+      mobile: apiData?.mobile || "",
+      address: apiData?.address || "",
     },
+    enableReinitialize: true,
     validateOnBlur: false,
     validateOnChange: false,
 
     onSubmit: async (values) => {
       // Call the passwordValidate function manually before submitting the form
-      values = await Object.assign(values, { profile: file || "" });
+      values = await Object.assign(values, { profile: file || apiData?.profile || "" });
       const errors = await profileValidation(values);
       if (Object.keys(errors).length === 0) {
         // Proceed with form submission if there are no errors
-        console.log(values);
+        let updatePromise = updateUser(values);
+        toast.promise(updatePromise, {
+          loading : 'Updating...!',
+          success : <b>Updated Successfully...!</b>,
+          error : <b>Couldn't Update...!</b>
+        });
+       
       }
-    },
+    }
   });
   //  useformik doesnt support the file upload so i create the function for it
   const onUpload = async (e) => {
     const base64 = await convertToBase64(e.target.files[0]);
     setFile(base64);
   };
+//logout handler function
+  function userLogout(){
+    localStorage.removeItem('token');
+    navigate('/');
+  }
 
+  if(isLoading) return <h1 className="text-2xl font-bold">isLoading</h1>
+  if(serverError) return <h1 className="text-xl text-red-500">{serverError.message}</h1>
   return (
     <>
       <div className="container mx-auto ">
@@ -52,7 +71,7 @@ const Profile = () => {
               <div className="profile flex justify-center py-4 ">
                 <label htmlFor="profile">
                   <img
-                    src={file || avatar}
+                    src={apiData?.profile || file || avatar}
                     className={`${styles.profile_img} ${extend.profile_img}`}
                     alt="avatar"
                   />
@@ -100,7 +119,7 @@ const Profile = () => {
                     type="text"
                     placeholder="Address"
                   />
-                <button className={styles.btn} type="submit">
+                <button  className={styles.btn} type="submit">
                   Update
                 </button>
                 </div>
@@ -108,9 +127,9 @@ const Profile = () => {
               <div className="text-center py-4">
                 <span className="text-gray-500">
                   Come Back Later?
-                  <Link to="/" className="text-red-500">
+                  <button onClick={userLogout} to="/" className="text-red-500">
                     Logout
-                  </Link>
+                  </button>
                 </span>
               </div>
             </form>

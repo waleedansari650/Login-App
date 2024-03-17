@@ -7,8 +7,8 @@ import otpGenerator from "otp-generator";
 // Middleware to verify the user
 export async function verifyUser(req, res, next) {
   try {
-    const { username } = req.body;
-
+    const { username } = req.method == "GET" ? req.query : req.body;
+     console.log("Username : ", username);
     // Check the user existence
     const user = await UserModel.findOne({ username });
     if (!user) {
@@ -33,8 +33,9 @@ POST : http://localhost:8080/api/register
 */
 export async function register(req, res) {
   try {
+    // if the username and the email are exist into the database then we will send the error and if not
+    // then we will create the new user and hash the password and store into the field of the password.
     const { username, password, profile, email } = req.body;
-
     // Check if the username already exists
     const existingUsername = await UserModel.findOne({ username });
     if (existingUsername) {
@@ -132,7 +133,7 @@ export async function getUser(req, res) {
 }
 
 /* put request http:localhost:8080/api/updateuser
-@params "id" : "<userid>"
+@params "header" : "<token>"
 body : {
   firstname : "",
   address : "",
@@ -142,6 +143,7 @@ body : {
 export async function updateUser(req, res) {
   try {
     // const id = req.query.id;
+    // I get the userId from the token
     const { userId } = req.user;
     if (userId) {
       const body = req.body;
@@ -176,8 +178,6 @@ export async function verifyOTP(req, res) {
     req.app.locals.OTP = null; // reset the OTP
     req.app.locals.resetSession = true; // set the reset session to true
     return res.status(201).send({msg : "Verify successfully...!"});
-
-
   }
   return res.status(400).send({error : "Invalid OTP"});
 }
@@ -185,8 +185,7 @@ export async function verifyOTP(req, res) {
 // successfully redirect the user when the OTP is valid
 export async function createResetSession(req, res) {
   if(req.app.locals.resetSession){
-      req.app.locals.resetSession = false;
-      return res.status(201).send({msg : "Access granted!"});
+      return res.status(201).send({flag : req.app.locals.resetSession});
   }
   return res.status(404).send({error : "Session expired!"});
 }

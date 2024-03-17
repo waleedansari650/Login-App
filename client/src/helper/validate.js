@@ -1,22 +1,21 @@
 
 import toast from 'react-hot-toast';
+import { authenticate } from './helper';
 
 //validate loginpage username
 export async function usernameValidate(values){
     const errors = usernameVerify({}, values);
+    const {status} = await authenticate(values.username);
+    if(status !== 200){
+        errors.exist = toast.error("Username doesn't exist...!");
+    }
     return errors;
 }
 
-function usernameVerify(error={}, values){
-    if(!values.username){
-        error.username = toast.error('Username Required...!');
-    }   else if(values.username.includes(" ")){
-        error.username = toast.error("Invalid Username...!");
-    }
-    return error;
-}
+
 export async function passwordValidate(values) {
     const errors = passwordVerify({}, values);
+    
     return errors;
 }   
 // reset password validation
@@ -49,6 +48,15 @@ export async function profileValidation(values){
     const errors = emailVerify({}, values);
     return errors;
 }
+// validate username
+function usernameVerify(error={}, values){
+    if(!values.username){
+        error.username = toast.error('Username Required...!');
+    }   else if(values.username.includes(" ")){
+        error.username = toast.error("Invalid Username...!");
+    }
+    return error;
+}
 // validate Password
 function passwordVerify(errors = {}, values){
     /* eslint-disable no-useless-escape */
@@ -62,7 +70,7 @@ function passwordVerify(errors = {}, values){
         errors.password = toast.error("Password must be more than 4 characters long");
     }else if(!specialChars.test(values.password)){
         errors.password = toast.error("Password must have special character");
-    }
+    } 
 
     return errors;
 }
